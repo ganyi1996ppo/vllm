@@ -12,7 +12,7 @@ from collections import deque
 from typing import Any, Deque, Dict, Optional, Sequence, Tuple
 
 import torch
-from torch.distributed import ProcessGroup, TCPStore
+from torch.distributed import ProcessGroup, TCPStore, is_hccl_available
 from torch.distributed.distributed_c10d import (Backend, PrefixStore,
                                                 _get_default_timeout,
                                                 is_nccl_available)
@@ -249,7 +249,6 @@ class StatelessProcessGroup:
             store=store,
             data_expiration_seconds=data_expiration_seconds)
 
-
 def stateless_init_torch_distributed_process_group(
         host: str, port: int, rank: int, world_size: int,
         backend: str) -> ProcessGroup:
@@ -270,7 +269,6 @@ def stateless_init_torch_distributed_process_group(
     In this case, how can we reliably form a communication channel within
     process 9 and 10, without affecting the communication channel within
     process 1, 2, ..., 8?
-
     One possible solution is to figure out if process 9 and 10 are the same
     as process 1 and 5 beforehand, and then form a communication channel
     based on the information, adjusting the ranks and world_size etc. However,
@@ -299,10 +297,13 @@ def stateless_init_torch_distributed_process_group(
     # different systems (e.g. RPC) in case the store is multi-tenant.
     prefix_store = PrefixStore(init_method, store)
 
+    pg_options = ProcessGroup.Options(backend=backend, timeout=timeout)
+
     pg: ProcessGroup = ProcessGroup(
         prefix_store,
         group_rank,
         group_size,
+        pg_options,
     )
 
     if backend == "gloo":
@@ -313,6 +314,9 @@ def stateless_init_torch_distributed_process_group(
                                          timeout=timeout)
         backend_type = ProcessGroup.BackendType.GLOO
         device = torch.device("cpu")
+        backend_class._set_sequence_number_for_group()
+        pg._register_backend(device, backend_type, backend_class)
+
     elif backend == "nccl":
         assert is_nccl_available()
         from torch.distributed.distributed_c10d import ProcessGroupNCCL
@@ -324,12 +328,20 @@ def stateless_init_torch_distributed_process_group(
                                          backend_options)
         backend_type = ProcessGroup.BackendType.NCCL
         device = torch.device("cuda")
-    else:
-        raise RuntimeError(f"Unsupported torch distributed backend: {backend}")
+        backend_class._set_sequence_number_for_group()
+        pg._register_backend(device, backend_type, backend_class)
 
-    pg._set_default_backend(backend_type)
-    backend_class._set_sequence_number_for_group()
-
-    pg._register_backend(device, backend_type, backend_class)
+    elif backend == "hccl":
+        assert is_hccl_available()
+        import torch_npu  # noqa
+        from torch_npu._C._distributed_c10d import ProcessGroupHCCL
+        backend_options = ProcessGroupHCCL.Options()
+        backend_options._timeout = timeout
+        backend_class = ProcessGroupHCCL(prefix_store, group_rank, group_size,
+                                         backend_options)
+        device = torch.device("npu")
+        backend_class._set_sequence_number_for_group()
+        backend_type = ProcessGroup.BackendType.CUSTOM
+        pg._register_backend(device, backend_type, backend_class)
 
     return pg

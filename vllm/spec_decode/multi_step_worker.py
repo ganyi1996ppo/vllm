@@ -118,6 +118,19 @@ class MultiStepWorker(ProposerWorkerBase, DelegateWorkerBase):
         filtered_model_outputs = self._filter_model_output(
             model_outputs, indices_of_seq_with_bonus_tokens)
         return filtered_model_outputs, True
+    
+    @staticmethod
+    def _maybe_update_previous_hidden_states(
+            model_output: SamplerOutput,
+            expanded_request: ExecuteModelRequest) -> None:
+        """
+        Updates the previous hidden states in an expanded request
+        in-place with the hidden states from the model output. 
+        """
+        if expanded_request.previous_hidden_states is not None:
+            expanded_request.previous_hidden_states = HiddenStates(
+                model_output.hidden_states,
+                expanded_request.seq_group_metadata_list)
 
     @staticmethod
     def _maybe_update_previous_hidden_states(

@@ -1340,6 +1340,7 @@ class ParallelConfig:
 
     pipeline_parallel_size: int = 1  # Number of pipeline parallel groups.
     tensor_parallel_size: int = 1  # Number of tensor parallel groups.
+    expert_tensor_parallel_size: int = 1
     data_parallel_size: int = 1  # Number of data parallel groups.
     data_parallel_rank: int = 0  # Rank of the data parallel group.
     # IP of the data parallel master.
@@ -1386,6 +1387,10 @@ class ParallelConfig:
     # including data parallelism.
     world_size_across_dp: int = field(init=False)
 
+    # world_size_across_dp is TPxPPxDP, it is the size of the world
+    # including data parallelism.
+    world_size_across_dp: int = field(init=False)
+
     rank: int = 0
 
     def get_next_dp_init_port(self) -> int:
@@ -1411,7 +1416,7 @@ class ParallelConfig:
             self.get_next_dp_init_port(),
             self.data_parallel_rank,
             self.data_parallel_size,
-            backend="gloo")
+            backend="hccl")
 
         return dp_group
 
@@ -1445,6 +1450,16 @@ class ParallelConfig:
     def __post_init__(self) -> None:
         self.world_size = self.pipeline_parallel_size * \
             self.tensor_parallel_size
+        self.data_parallel_size = envs.VLLM_DP_SIZE
+        self.data_parallel_rank = envs.VLLM_DP_RANK
+        self.data_parallel_master_ip = envs.VLLM_DP_MASTER_IP
+        self.data_parallel_master_port = envs.VLLM_DP_MASTER_PORT
+        self.world_size_across_dp = self.world_size * self.data_parallel_size
+
+        if self.distributed_executor_backend == "external_launcher":
+            import os
+            os.environ["VLLM_ENABLE_V1_MULTIPROCESSING"] = "0"
+            logger.info("Disabling V1 multiprocessing for external launcher.")
 
         self.data_parallel_size = envs.VLLM_DP_SIZE
         self.data_parallel_rank = envs.VLLM_DP_RANK
@@ -3632,6 +3647,7 @@ def set_current_vllm_config(vllm_config: VllmConfig, check_compile=False):
     can access the vLLM config to determine how to dispatch.
     """
     global _current_vllm_config
+
     old_vllm_config = _current_vllm_config
     from vllm.compilation.counter import compilation_counter
     num_models_seen = compilation_counter.num_models_seen

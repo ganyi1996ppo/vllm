@@ -24,6 +24,9 @@ forward_start_time: float = 0
 batchsize_logging_interval: float = envs.VLLM_LOG_BATCHSIZE_INTERVAL
 batchsize_forward_time: defaultdict = defaultdict(list)
 
+@dataclass
+class DPMetadata:
+    cu_tokens_across_dp_cpu: torch.Tensor
 
 @dataclass
 class DPMetadata:
@@ -83,12 +86,12 @@ def set_forward_context(attn_metadata: Any,
         num_tokens_across_dp = [0] * dp_size
         num_tokens_across_dp[dp_rank] = batchsize
         num_tokens_tensor = torch.tensor(num_tokens_across_dp,
-                                         device="cpu",
+                                         device="npu",
                                          dtype=torch.int32)
         from vllm.distributed.parallel_state import get_dp_group
-        dist.all_reduce(num_tokens_tensor, group=get_dp_group().cpu_group)
-        cu_tokens_across_dp_cpu = torch.cumsum(num_tokens_tensor, dim=0)
-        dp_metadata = DPMetadata(cu_tokens_across_dp_cpu)
+        dist.all_reduce(num_tokens_tensor, group=get_dp_group().device_group)
+        cu_tokens_across_dp_npu = torch.cumsum(num_tokens_tensor, dim=0)
+        dp_metadata = DPMetadata(cu_tokens_across_dp_npu)
 
     global _forward_context
     prev_context = _forward_context
