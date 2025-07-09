@@ -301,6 +301,8 @@ class EngineArgs:
     # number of P/D disaggregation (or other disaggregation) workers
     pipeline_parallel_size: int = ParallelConfig.pipeline_parallel_size
     tensor_parallel_size: int = ParallelConfig.tensor_parallel_size
+    data_parallel_rank: int = ParallelConfig.data_parallel_rank
+    data_parallel_rank_local: int = ParallelConfig.data_parallel_rank_local
     data_parallel_size: int = ParallelConfig.data_parallel_size
     data_parallel_size_local: Optional[int] = None
     data_parallel_address: Optional[str] = None
@@ -624,6 +626,10 @@ class EngineArgs:
             **parallel_kwargs["pipeline_parallel_size"])
         parallel_group.add_argument("--tensor-parallel-size", "-tp",
                                     **parallel_kwargs["tensor_parallel_size"])
+        parallel_group.add_argument("--data-parallel-rank", "-dp-rank",
+                                    **parallel_kwargs["data_parallel_rank"])
+        parallel_group.add_argument("--data-parallel-rank-local", "-dp-rank-local",
+                                    **parallel_kwargs["data_parallel_rank_local"])
         parallel_group.add_argument("--data-parallel-size", "-dp",
                                     **parallel_kwargs["data_parallel_size"])
         parallel_group.add_argument('--data-parallel-size-local',
@@ -1112,6 +1118,8 @@ class EngineArgs:
             pipeline_parallel_size=self.pipeline_parallel_size,
             tensor_parallel_size=self.tensor_parallel_size,
             data_parallel_size=self.data_parallel_size,
+            data_parallel_rank=self.data_parallel_rank,
+            data_parallel_rank_local=self.data_parallel_rank_local,
             data_parallel_size_local=data_parallel_size_local,
             data_parallel_master_ip=data_parallel_address,
             data_parallel_rpc_port=data_parallel_rpc_port,

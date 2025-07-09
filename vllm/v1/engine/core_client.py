@@ -84,12 +84,7 @@ class EngineCoreClient(ABC):
         client_addresses: Optional[dict[str, str]] = None,
         client_index: int = 0,
     ) -> "MPClient":
-        if vllm_config.parallel_config.data_parallel_size > 1:
-            if vllm_config.parallel_config.data_parallel_backend == "ray":
-                return RayDPClient(vllm_config, executor_class, log_stats,
-                                   client_addresses, client_index)
-            return DPAsyncMPClient(vllm_config, executor_class, log_stats,
-                                   client_addresses, client_index)
+        # Use only AsyncMPClient here for dp scenario and use nginx for the dp request routering
         return AsyncMPClient(vllm_config, executor_class, log_stats,
                              client_addresses, client_index)
 

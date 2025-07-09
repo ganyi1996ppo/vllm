@@ -377,7 +377,7 @@ class EngineCoreProc(EngineCore):
 
         self.engine_index = engine_index
         identity = self.engine_index.to_bytes(length=2, byteorder="little")
-        self.engines_running = False
+        self.engines_running = True
 
         with self._perform_handshake(handshake_address, identity, on_head_node,
                                      vllm_config) as addresses:
@@ -848,6 +848,8 @@ class DPEngineCoreProc(EngineCoreProc):
 
     def run_busy_loop(self):
         """Core busy loop of the EngineCore for data parallel case."""
+        # Note: In customized DPEngineCoreProc, no idle time will exist. We assume the another dp groups are always 
+        # running.
 
         # Loop until process is sent a SIGINT or SIGTERM
         while True:
@@ -868,19 +870,6 @@ class DPEngineCoreProc(EngineCoreProc):
                 # if the model didn't execute any ready requests.
                 self.execute_dummy_batch()
 
-            # 3) All-reduce operation to determine global unfinished reqs.
-            self.engines_running = self._has_global_unfinished_reqs(
-                local_unfinished_reqs)
-
-            if not self.engines_running:
-                if self.dp_rank == 0:
-                    # Notify client that we are pausing the loop.
-                    logger.debug("Wave %d finished, pausing engine loop.",
-                                 self.current_wave)
-                    self.output_queue.put_nowait(
-                        (-1,
-                         EngineCoreOutputs(wave_complete=self.current_wave)))
-                self.current_wave += 1
 
     def _has_global_unfinished_reqs(self, local_unfinished: bool) -> bool:
 
