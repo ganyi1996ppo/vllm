@@ -1882,16 +1882,16 @@ class ParallelConfig:
                 f"data_parallel_size_local ({self.data_parallel_size_local}) "
                 f"must be <= data_parallel_size ({self.data_parallel_size})")
 
-        if self.data_parallel_size > 1 or self.data_parallel_size_local == 0:
-            # Data parallel was specified in the engine args.
-            self.data_parallel_master_port = get_open_port()
-        else:
+        # if self.data_parallel_size > 1 or self.data_parallel_size_local == 0:
+        #     # Data parallel was specified in the engine args.
+        #     self.data_parallel_master_port = get_open_port()
+        # else:
             # Otherwise fall back to env vars (e.g. for offline SPMD case).
-            self.data_parallel_size = envs.VLLM_DP_SIZE
-            self.data_parallel_rank = envs.VLLM_DP_RANK
-            self.data_parallel_rank_local = envs.VLLM_DP_RANK_LOCAL
-            self.data_parallel_master_ip = envs.VLLM_DP_MASTER_IP
-            self.data_parallel_master_port = envs.VLLM_DP_MASTER_PORT
+        self.data_parallel_size = envs.VLLM_DP_SIZE
+        self.data_parallel_rank = envs.VLLM_DP_RANK
+        self.data_parallel_rank_local = envs.VLLM_DP_RANK_LOCAL
+        self.data_parallel_master_ip = envs.VLLM_DP_MASTER_IP
+        self.data_parallel_master_port = envs.VLLM_DP_MASTER_PORT
 
         if self.distributed_executor_backend == "external_launcher":
             import os
