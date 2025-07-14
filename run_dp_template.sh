@@ -18,7 +18,7 @@ export ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 
 vllm serve model_path \
     --host 0.0.0.0 \
-    --port 8000 \
+    --port $6 \
     --tensor-parallel-size 2 \
     --enable-expert-parallel \
     --seed 1024 \
