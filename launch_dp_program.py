@@ -2,8 +2,8 @@ import multiprocessing
 import os
 import sys
 
-dp_size = 2
-dp_size_local = 2
+dp_size = 32
+dp_size_local = 16
 dp_rank_start = 0
 dp_ip = "your_dp_ip_here"
 dp_port = "your_dp_port_here"
