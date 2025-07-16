@@ -14,7 +14,7 @@ if not os.path.exists(template_path):
   sys.exit(1)
 
 def run_command(dp_rank_local, dp_rank, engine_port_):
-  command = f"bash ./run_dp_template.sh {dp_size} {dp_ip} {dp_port} {dp_rank_local} {dp_rank} {engine_port_}"
+  command = f"bash ./run_dp_template.sh {dp_size} {dp_ip} {dp_port} {dp_rank_local} {dp_rank} {engine_port_} {dp_size_local}"
   os.system(command)
 
 processes = []
