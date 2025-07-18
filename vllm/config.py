@@ -1892,7 +1892,6 @@ class ParallelConfig:
         self.data_parallel_rank_local = envs.VLLM_DP_RANK_LOCAL
         self.data_parallel_master_ip = envs.VLLM_DP_MASTER_IP
         self.data_parallel_master_port = envs.VLLM_DP_MASTER_PORT
-        self.data_parallel_size_local = envs.VLLM_DP_SIZE_LOCAL
 
         if self.distributed_executor_backend == "external_launcher":
             import os

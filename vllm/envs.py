@@ -774,6 +774,9 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "VLLM_DP_MASTER_PORT":
     lambda: int(os.getenv("VLLM_DP_MASTER_PORT", "0")),
 
+    "VLLM_DP_SIZE_LOCAL":
+    lambda: int(os.getenv("VLLM_DP_SIZE_LOCAL", "1")),
+
     # Randomize inputs during dummy runs when using Data Parallel
     "VLLM_RANDOMIZE_DP_DUMMY_INPUTS":
     lambda: os.environ.get("VLLM_RANDOMIZE_DP_DUMMY_INPUTS", "0") == "1",
