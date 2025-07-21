@@ -801,7 +801,7 @@ class DPEngineCoreProc(EngineCoreProc):
                            world_size))
 
         self.dp_rank = dp_rank
-        self.dp_group = vllm_config.parallel_config.stateless_init_dp_group()
+        # self.dp_group = vllm_config.parallel_config.stateless_init_dp_group()
 
     def shutdown(self):
         super().shutdown()
@@ -874,13 +874,14 @@ class DPEngineCoreProc(EngineCoreProc):
     def _has_global_unfinished_reqs(self, local_unfinished: bool) -> bool:
 
         # Optimization - only perform finish-sync all-reduce every 24 steps.
-        self.counter += 1
-        if self.counter != 24:
-            return True
-        self.counter = 0
+        return True
+        # self.counter += 1
+        # if self.counter != 24:
+        #     return True
+        # self.counter = 0
 
-        return ParallelConfig.has_unfinished_dp(self.dp_group,
-                                                local_unfinished)
+        # return ParallelConfig.has_unfinished_dp(self.dp_group,
+        #                                         local_unfinished)
 
 
 class DPEngineCoreActor(DPEngineCoreProc):
